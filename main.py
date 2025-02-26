@@ -1,7 +1,10 @@
-from flask import Flask, redirect, request, jsonify, session
+from flask import Flask, redirect, request, jsonify, session, render_template
 import requests
 import urllib.parse
 from datetime import datetime, timedelta
+import pandas as pd
+import sqlite3
+import json
 
 
 app = Flask(__name__)
@@ -80,9 +83,45 @@ def get_playlists():
             'Authorization': f"Bearer {session['access_token']}"
     }
     response = requests.get(API_BASE_URL + 'me/playlists', headers = headers)
+    print("STATUS CODE: ", response.status_code)
     playlists = response.json()
+    playlists_df = pd.json_normalize(playlists['items']) #putting into df in order to write to sql database
+    playlists_cols = ['id', 'href', 'description', 'name', 
+                                 'owner.id', 'owner.display_name', 'tracks.href']
+    playlists_df = playlists_df[playlists_cols]
+    playlists_df.rename(columns = {col : col.replace('.', '_') for col in playlists_cols}, inplace = True)
+    print(playlists_df.info())
+    
+    tracks = []
+    keys = []
+    for x in playlists['items']:
+        response = requests.get(x['tracks']['href'], headers = headers)
+        data = response.json()
+        temp = pd.json_normalize(data['items'])
+        temp['playlist.id'] = x['id']
+        tracks.append(temp)
+    tracks_df = pd.concat(tracks)
+    tracks_cols = ['playlist.id', 'track.id', 'track.explicit', 'track.album.id', 'track.artists', 
+                          'track.duration_ms', 'track.href', 'track.name', 'track.popularity']
+    tracks_df = tracks_df[tracks_cols]
+    tracks_df.rename(columns = {col : col.replace('.', '_') for col in tracks_cols}, inplace = True)
+    for col in tracks_df.columns:
+        tracks_df[col] = tracks_df[col].apply(lambda x: json.dumps(x) if isinstance(x, list) else x) #convert list-like data types for sql
 
-    return jsonify(playlists)
+    print(tracks_df.info())
+    
+    # next step? get user's username and name the table {userid}_playlists or something so we can name the tables for each user
+    
+    with sqlite3.connect('spotify_dataset.db') as conn:
+        playlists_df.to_sql("user_playlists", conn, if_exists = "replace", index = False) # one table for playlists and one for tracks
+        print(type(tracks_df))
+        tracks_df.to_sql(name="user_tracks", con=conn, if_exists = "replace", index = False)
+        display = pd.read_sql_query('''
+        SELECT user_tracks.track_name, user_tracks.track_artists 
+        FROM user_tracks INNER JOIN spotify_tracks 
+        ON user_tracks.track_id = spotify_tracks.track_id;''', conn)
+        
+    return display.to_html()
 
 
 @app.route('/refresh-token')
