@@ -23,7 +23,7 @@ API_BASE_URL = 'https://api.spotify.com/v1/'
 @app.route('/')
 
 def index():
-    return "Welcome to my Spotify app <a href='/login'>Login with Spotify</a>"
+    return "Welcome to our Spotify song recommender! <a href='/login'>Login with Spotify</a>"
 
 
 @app.route('/login')
@@ -106,7 +106,7 @@ def get_playlists():
     tracks_df = tracks_df[tracks_cols]
     tracks_df.rename(columns = {col : col.replace('.', '_') for col in tracks_cols}, inplace = True)
     for col in tracks_df.columns:
-        tracks_df[col] = tracks_df[col].apply(lambda x: json.dumps(x) if isinstance(x, list) else x) #convert list-like data types for sql
+        tracks_df[col] = tracks_df[col].apply(lambda x: json.dumps(x) if isinstance(x, list) else x) #convert list-like data  types for sql
 
     print(tracks_df.info())
     
@@ -120,8 +120,23 @@ def get_playlists():
         SELECT user_tracks.track_name, user_tracks.track_artists 
         FROM user_tracks INNER JOIN spotify_tracks 
         ON user_tracks.track_id = spotify_tracks.track_id;''', conn)
-        
-    return display.to_html()
+
+    display_table = display.to_html()
+
+    return_str = f'''
+    <html>
+    <body>
+        <h3>Songs in Both User Playlists and Kaggle Dataset</h2>
+        {display_table}
+        <br>
+        <a href="/login">Login Another User with Spotify</a>
+        <br>
+        <p>OR</p>
+        <a href="">See Combined Recommendations Playlist</a>
+    </body>
+    </html>
+    '''
+    return return_str
 
 
 @app.route('/refresh-token')
