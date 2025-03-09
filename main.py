@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import sqlite3
 import json
+from music_rec import prep_user_df, remove_duplicates, recommend_songs
 
 
 app = Flask(__name__)
@@ -149,5 +150,41 @@ def refresh_token():
     return redirect('/playlists')
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+
+@app.route('/display-recommended', methods=['GET', 'POST'])
+
+def display_recommended():
+    with sqlite3.connect("spotify_dataset.db") as conn:
+        df_spotify_tracks = pd.read_sql_query("SELECT * FROM spotify_tracks;", conn)
+        df_user_playlists = pd.read_sql_query("SELECT * FROM user_playlists;", conn)
+        df_user_tracks = pd.read_sql_query("SELECT * FROM user_tracks;", conn)
+
+    user_df = prep_user_df()
+
+    features = ['danceability', 'energy', 'tempo', 'speechiness', 'acousticness', 'instrumentalness', 'valence', 'loudness']
+    df_users_filtered = user_df[features]
+
+    if request.method == 'POST':
+        genre = request.form.get('genre', None)
+        n = request.form.get('n', '30')
+
+        try:
+            n = int(n)  # Convert to integer
+        except ValueError:
+            return "Error: n must be an integer.", 400  # Handle invalid numbers
+
+        if n <= 0:
+            return "Error: n must be a positive integer.", 400
+
+        # Generate the recommended playlist
+        recommended = recommend_songs(df_users_filtered, df_spotify_tracks, genre=genre, n=n)
+    
+        # Convert DataFrame to HTML
+        recommended_html = recommended.to_html(classes='table table-striped', index=False)
+    
+        return render_template('display_recommended.html', table=recommended_html)
+
+    return render_template('input_form.html')  # Show form if GET request
+
+
+
