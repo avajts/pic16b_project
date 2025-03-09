@@ -23,7 +23,7 @@ API_BASE_URL = 'https://api.spotify.com/v1/'
 @app.route('/')
 
 def index():
-    return "Welcome to our Spotify song recommender! <a href='/login'>Login with Spotify</a>"
+    return render_template('index.html')
 
 
 @app.route('/login')
@@ -121,22 +121,9 @@ def get_playlists():
         FROM user_tracks INNER JOIN spotify_tracks 
         ON user_tracks.track_id = spotify_tracks.track_id;''', conn)
 
-    display_table = display.to_html()
+    display_table = display.to_html(classes='table table-striped', index=False)
 
-    return_str = f'''
-    <html>
-    <body>
-        <h3>Songs in Both User Playlists and Kaggle Dataset</h2>
-        {display_table}
-        <br>
-        <a href="/login">Login Another User with Spotify</a>
-        <br>
-        <p>OR</p>
-        <a href="">See Combined Recommendations Playlist</a>
-    </body>
-    </html>
-    '''
-    return return_str
+    return render_template('playlist.html', table=display_table)
 
 
 @app.route('/refresh-token')
@@ -160,3 +147,7 @@ def refresh_token():
     session['expires_at'] = datetime.now().timestamp() + new_token_info['expires_in']
 
     return redirect('/playlists')
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
