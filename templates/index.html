@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #89E88F;
+            color: white;
+            text-align: center;
+        }
+        .container-box {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+        }
+        .title-box {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .description-box {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        .btn-spotify {
+            background-color: #1DB954;
+            border: none;
+            font-size: 18px;
+            padding: 12px;
+            width: 60%;
+        }
+        .btn-spotify:hover {
+            background-color: #1aa34a;
+        }
+        .disclaimer {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container-box">
+        <div class="title-box">Welcome to our Spotify song recommender!</div>
+        <div class="description-box">Log in with up to 5 Spotify accounts to get a recommended playlist combining all your tastes</div>
+        <a href="/login" class="btn btn-spotify text-white">Log in with Spotify</a>
+        <div class="disclaimer">Disclaimer: This app is not affiliated with Spotify. We do not store your personal data.</div>
+    </div>
+
+</body>
+</html>
