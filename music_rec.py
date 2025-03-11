@@ -7,7 +7,15 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 
 
-def prep_user_df():
+def prep_dfs():
+    '''
+    Removes duplicates in sql tables spotify_tracks,
+    user_playlists, and user_tracks by calling remove_duplicates
+    function.
+    Returns:
+    df_all_tracks: df of user songs that are also in Kaggle dataset
+    df_spotify_tracks: df of Kaggle Spotify songs
+    '''
     with sqlite3.connect("spotify_dataset.db") as conn:
         df_spotify_tracks = pd.read_sql_query("SELECT * FROM spotify_tracks;", conn)
         df_user_playlists = pd.read_sql_query("SELECT * FROM user_playlists;", conn)
@@ -28,11 +36,16 @@ def prep_user_df():
             result = df_spotify_tracks.loc[df_spotify_tracks['track_id'] == value]
             df_all_tracks = pd.concat([df_all_tracks, result], ignore_index=True)
         
-    return df_all_tracks
+    return df_all_tracks, df_spotify_tracks
 
 
 def remove_duplicates(df, subset):
-
+    '''
+    Removes duplicate rows from dataframes and resets the index.
+    Args:
+    df: the dataframe you want to remove duplicates from
+    subset: which columns you want to find duplicates based on
+    '''
     # Count duplicated rows based on track_name and artists
     duplicated_rows = df.duplicated(subset=subset).sum()
 
