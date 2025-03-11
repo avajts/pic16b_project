@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import sqlite3
 import json
-from music_rec import prep_user_df, remove_duplicates, recommend_songs
+from music_rec import prep_dfs, remove_duplicates, recommend_songs
 
 
 app = Flask(__name__)
@@ -154,12 +154,8 @@ def refresh_token():
 @app.route('/display-recommended', methods=['GET', 'POST'])
 
 def display_recommended():
-    with sqlite3.connect("spotify_dataset.db") as conn:
-        df_spotify_tracks = pd.read_sql_query("SELECT * FROM spotify_tracks;", conn)
-        df_user_playlists = pd.read_sql_query("SELECT * FROM user_playlists;", conn)
-        df_user_tracks = pd.read_sql_query("SELECT * FROM user_tracks;", conn)
 
-    user_df = prep_user_df()
+    user_df, df_spotify_tracks = prep_dfs()
 
     features = ['danceability', 'energy', 'tempo', 'speechiness', 'acousticness', 'instrumentalness', 'valence', 'loudness']
     df_users_filtered = user_df[features]
