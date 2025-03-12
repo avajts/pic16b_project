@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter Plot Type and Features</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #89E88F;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 500px;
+        }
+	.submit-btn {
+            background-color: #1DB954;  
+            color: white;               
+            padding: 10px 20px;         
+            border: none;              
+            border-radius: 5px;              
+            font-size: 16px;     
+	    width: 70%      
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2 class="text-center">Enter Plot Type and Features</h2>
+        <form action="/display-data" method="POST">
+            
+            <select>
+                <label for="plot" class="form-label">Plot Type</label>
+                <option value="two_var_plot">Two Variable Scatter Plot</option>
+                <option value="genre_hist">Genre Histogram</option>
+            </select>
+            
+            <select>
+                <label for="feature0" class="form-label">Feature 1</label>
+                <option value="danceability">Danceability</option>
+                <option value="loudness">Loudness</option>
+                <option value="energy">Energy</option>
+                <option value="acousticness">Acousticness</option>
+                <option value="instrumentalness">Instrumentalness</option>
+                <option value="speechiness">Speechiness</option>
+                <option value="valence">Valence</option>
+                <option value="tempo">Tempo</option>
+            </select>
+            
+            <select>
+                <label for="feature1" class="form-label">Feature 2</label>
+                <option value="danceability">Danceability</option>
+                <option value="loudness">Loudness</option>
+                <option value="energy">Energy</option>
+                <option value="acousticness">Acousticness</option>
+                <option value="instrumentalness">Instrumentalness</option>
+                <option value="speechiness">Speechiness</option>
+                <option value="valence">Valence</option>
+                <option value="tempo">Tempo</option>
+            </select>
+            
+            <div class="mb-3">
+                <label for="genre" class="form-label">Genre</label>
+                <input type="text" class="form-control" id="genre" name="genre" required>
+            </div>
+            <button type="submit" class="btn submit-btn w-100">Submit</button>
+        </form>
+    </div>
+
+</body>
+</html>

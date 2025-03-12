@@ -16,3 +16,13 @@ def genre_plot(db, genres, col):
         df = pd.read_sql_query(cmd, conn)
     fig = px.box(df, x = 'track_genre', y = col, color = 'track_genre', width = 700, height = 400)
     return fig
+
+def two_var_plot(df, features):
+    x = features[0]
+    y = features[1]
+    fig = px.scatter(df, x, y, title=f'{x} vs. {y}', color='username')
+    return fig
+
+def genre_hist(df):
+    fig = px.histogram(df, 'genre', facet_col='username')
+    return fig

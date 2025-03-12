@@ -6,6 +6,10 @@ import pandas as pd
 import sqlite3
 import json
 from music_rec import prep_dfs, remove_duplicates, recommend_songs
+from eda import two_var_plot, genre_hist
+import plotly.express as px
+from plotly import utils
+import re
 
 
 app = Flask(__name__)
@@ -86,7 +90,9 @@ def get_playlists():
     response = requests.get(API_BASE_URL + 'me/playlists', headers = headers)
     print("STATUS CODE: ", response.status_code)
     playlists = response.json()
-    playlists_df = pd.json_normalize(playlists['items']) #putting into df in order to write to sql database
+    
+    #put into df in order to write to SQL database
+    playlists_df = pd.json_normalize(playlists['items']) 
     playlists_cols = ['id', 'href', 'description', 'name', 
                                  'owner.id', 'owner.display_name', 'tracks.href']
     playlists_df = playlists_df[playlists_cols]
@@ -109,18 +115,31 @@ def get_playlists():
     for col in tracks_df.columns:
         tracks_df[col] = tracks_df[col].apply(lambda x: json.dumps(x) if isinstance(x, list) else x) #convert list-like data  types for sql
 
-    print(tracks_df.info())
+    # print(tracks_df.info())
     
-    # next step? get user's username and name the table {userid}_playlists or something so we can name the tables for each user
+    
+    #get user's username so they can have their own table in the database
+    headers = {
+            'Authorization': f"Bearer {session['access_token']}"
+    }
+    response = requests.get(API_BASE_URL + 'me', headers = headers)
+    print("STATUS CODE: ", response.status_code)
+    user_info = response.json()
+    username = user_info['display_name']
+    tracks_df['username'] = username
+    playlists_df['username'] = username
     
     with sqlite3.connect('spotify_dataset.db') as conn:
-        playlists_df.to_sql("user_playlists", conn, if_exists = "replace", index = False) # one table for playlists and one for tracks
-        print(type(tracks_df))
-        tracks_df.to_sql(name="user_tracks", con=conn, if_exists = "replace", index = False)
+        playlists_df.to_sql("user_playlists", conn, if_exists = "append", index = False) # one table for playlists and one for tracks
+        tracks_df.to_sql(name="user_tracks", con=conn, if_exists = "append", index = False)
         display = pd.read_sql_query('''
         SELECT user_tracks.track_name, user_tracks.track_artists 
         FROM user_tracks INNER JOIN spotify_tracks 
         ON user_tracks.track_id = spotify_tracks.track_id;''', conn)
+    
+    #extract artist names for display table
+    display['track_artists'] = (display['track_artists'].str.findall(r'\bname": "([^"]*)')).apply(lambda x: str(x))
+    display.drop_duplicates(inplace=True)
 
     display_table = display.to_html(classes='table table-striped', index=False)
 
@@ -154,6 +173,10 @@ def refresh_token():
 @app.route('/display-recommended', methods=['GET', 'POST'])
 
 def display_recommended():
+    with sqlite3.connect("spotify_dataset.db") as conn:
+        df_spotify_tracks = pd.read_sql_query("SELECT * FROM spotify_tracks;", conn)
+        df_user_playlists = pd.read_sql_query("SELECT * FROM user_playlists;", conn)
+        df_user_tracks = pd.read_sql_query("SELECT * FROM user_tracks;", conn)
 
     user_df, df_spotify_tracks = prep_dfs()
 
@@ -184,3 +207,40 @@ def display_recommended():
 
 
 
+@app.route('/display-data', methods=['GET', 'POST'])
+def display_data():
+    
+    """
+    if user clicks on button to prompt this, it will display some visualizations about the users' music
+    visualizations can be customized
+    """
+    # Get the data into dataframes
+    with sqlite3.connect("spotify_dataset.db") as conn:
+        df_spotify_tracks = pd.read_sql_query("SELECT * FROM spotify_tracks;", conn)
+        df_user_playlists = pd.read_sql_query("SELECT * FROM user_playlists;", conn)
+        df_user_tracks = pd.read_sql_query("SELECT * FROM user_tracks;", conn)
+
+    user_df, df_spotify_tracks = prep_dfs()
+    
+    if request.method == 'POST':
+        plot = request.form.get('plot', None)
+        features = [request.form.get('feature0', 'loudness'), request.form.get('feature1', 'energy')]
+        genre = request.form.get('genre', 'pop')
+        
+        if plot == 'two_var_plot':
+            # Create the Plotly figures
+            fig = two_var_plot(user_df, features)
+    
+            # Convert the Plotly figure to JSON
+            graph_json = json.dumps(fig, cls=utils.PlotlyJSONEncoder)
+    
+            # Render the template with the graph JSON
+            return render_template('two_var_plot.html', graph_json=graph_json)
+        
+        elif plot == 'genre_hist':
+            fig = genre_hist(user_df)
+            graph_json = json.dumps(fig, cls=util.PlotlyJSONEncoder)
+            return render_template('genre_hist.html', graph_json=graph_json)
+    
+    else: return render_template('data_input.html')
+    
