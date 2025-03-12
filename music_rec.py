@@ -6,6 +6,9 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 
+from sklearn.preprocessing import LabelEncoder
+le = LabelEncoder()
+
 
 def prep_dfs(spotify, tracks):
     '''
@@ -31,6 +34,9 @@ def prep_dfs(spotify, tracks):
         if value in tracks['track_id'].values:
             result = spotify.loc[spotify['track_id'] == value]
             df_all_tracks = pd.concat([df_all_tracks, result], ignore_index=True)
+
+    # Encode the 'track_genre' category to get numerical values
+    df_all_tracks['track_genre_encoded'] = le.fit_transform(df_all_tracks['track_genre'])
         
     return df_all_tracks
 
