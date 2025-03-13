@@ -21,9 +21,9 @@ def prep_dfs(spotify, tracks):
     '''
     #Remove duplicates
     """ Not necessary since we do this in ipynb file, use params"""
-    # df_spotify_tracks = remove_duplicates(df_spotify_tracks, ['track_name', 'artists'])
-    # df_user_playlist = remove_duplicates(df_user_playlists, ['name', 'description'])
-    # df_user_tracks = remove_duplicates(df_user_tracks, ['track_name', 'track_popularity'])
+    spotify = remove_duplicates(spotify, ['track_name', 'artists'])
+    #playlist = remove_duplicates(playlist, ['name', 'description'])
+    tracks = remove_duplicates(tracks, ['track_name', 'track_popularity'])
 
     #Create df that has user songs that are also in Kaggle dataset
     df_all_tracks = pd.DataFrame()
@@ -38,7 +38,7 @@ def prep_dfs(spotify, tracks):
     # Encode the 'track_genre' category to get numerical values
     df_all_tracks['track_genre_encoded'] = le.fit_transform(df_all_tracks['track_genre'])
         
-    return df_all_tracks
+    return df_all_tracks, spotify
 
 
 def remove_duplicates(df, subset):

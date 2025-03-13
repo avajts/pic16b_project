@@ -179,7 +179,7 @@ def display_recommended():
         df_user_playlists = pd.read_sql_query("SELECT * FROM user_playlists;", conn)
         df_user_tracks = pd.read_sql_query("SELECT * FROM user_tracks;", conn)
 
-    user_df, df_spotify_tracks = prep_dfs()
+    user_df, df_spotify_tracks = prep_dfs(df_spotify_tracks, df_user_tracks)
 
     features = ['danceability', 'energy', 'tempo', 'speechiness', 'acousticness', 'instrumentalness', 'valence', 'loudness']
     df_users_filtered = user_df[features]
@@ -239,7 +239,7 @@ def display_two_var():
         df_user_playlists = pd.read_sql_query("SELECT * FROM user_playlists;", conn)
         df_user_tracks = pd.read_sql_query("SELECT * FROM user_tracks;", conn)
 
-    user_df, df_spotify_tracks = prep_dfs()
+    user_df, df_spotify_tracks = prep_dfs(df_spotify_tracks, df_user_tracks)
     print(user_df.info())
     
     if request.method=='POST':
@@ -266,7 +266,7 @@ def display_genre_hist():
         df_user_playlists = pd.read_sql_query("SELECT * FROM user_playlists;", conn)
         df_user_tracks = pd.read_sql_query("SELECT * FROM user_tracks;", conn)
 
-    user_df, df_spotify_tracks = prep_dfs()
+    user_df, df_spotify_tracks = prep_dfs(df_spotify_tracks, df_user_tracks)
     
     genre = request.form.get('genre', 'pop')
         
