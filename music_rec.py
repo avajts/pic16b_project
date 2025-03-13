@@ -156,10 +156,12 @@ def recommend_songs(user_songs, spotify_tracks, genre=None, n=30, random_state=4
         raise ValueError("No valid recommendations found. Please check the input data.")
 
     # Get the recommended songs
-    recommended_songs = genre_tracks.iloc[valid_indices].drop_duplicates(subset=['track_id']).head(n)
+    recommended_songs = genre_tracks.iloc[valid_indices].drop_duplicates(subset=['track_name', 'artists']).head(n)
 
     # Randomly select `n` songs from the recommendations
     random_recommendations = recommended_songs.sample(n=n, random_state=random_state)
+
+    random_recommendations = random_recommendations[['artists', 'track_name', 'track_genre']]
 
     # Display the recommended songs
     return random_recommendations

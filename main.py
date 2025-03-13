@@ -174,16 +174,10 @@ def refresh_token():
 @app.route('/display-recommended', methods=['GET', 'POST'])
 
 def display_recommended():
-    # with sqlite3.connect("spotify_dataset.db") as conn:
-    #     df_spotify_tracks = pd.read_sql_query("SELECT * FROM spotify_tracks;", conn)
-    #     df_user_playlists = pd.read_sql_query("SELECT * FROM user_playlists;", conn)
-    #     df_user_tracks = pd.read_sql_query("SELECT * FROM user_tracks;", conn)
 
     user_df = get_user_df()
     df_spotify_tracks = get_spotify_df()
 
-    features = ['danceability', 'energy', 'tempo', 'speechiness', 'acousticness', 'instrumentalness', 'valence', 'loudness']
-    df_users_filtered = user_df[features]
 
     if request.method == 'POST':
         genre = request.form.get('genre', None)
@@ -198,7 +192,7 @@ def display_recommended():
             return "Error: n must be a positive integer.", 400
 
         # Generate the recommended playlist
-        recommended = recommend_songs(df_users_filtered, df_spotify_tracks, genre=genre, n=n)
+        recommended = recommend_songs(user_df, df_spotify_tracks, genre=genre, n=n)
     
         # Convert DataFrame to HTML
         recommended_html = recommended.to_html(classes='table table-striped', index=False)
