@@ -28,8 +28,8 @@
 <body>
 
     <div class="container">
-        <h2 class="text-center">Loudness vs. Energy Scatterplot</h2>
-            <form action="/display-data/two-var-plot" method="POST">
+        <h2 class="text-center">Two-Variable Scatterplot</h2>
+<!--             <form action="/display-data/two-var-plot" method="POST">
 
                 <select>
                     <label for="feature0" class="form-label">Feature 1</label>
@@ -55,12 +55,24 @@
                     <option value="tempo">Tempo</option>
                 </select>
             <button type="submit" class="btn submit-btn w-100">Submit</button>
+        </form> -->
+        <form method="POST">
+            <label for="feature0">Feature 1:</label>
+            <input type="text" name="feature0" value="loudness">
+    
+            <label for="feature1">Feature 2:</label>
+            <input type="text" name="feature1" value="energy">
+    
+            <button type="submit">Update Plot</button>
         </form>
         
         <div id="2-var-plot"></div>
         <script>
-            var graph_data = {{ graph_json | safe }};
-            Plotly.plot('2-var-plot', graph_data, {});
+            function updatePlot() {
+                var graph = {{ graph_json | safe }};
+                Plotly.react('2-var-plot', graph.data, graph.layout);
+            }
+            updatePlot();
         </script>
         
         <div class="text-center">

@@ -1,11 +1,11 @@
-from flask import Flask, redirect, request, jsonify, session, render_template
+from flask import Flask, redirect, request, jsonify, session, render_template, url_for
 import requests
 import urllib.parse
 from datetime import datetime, timedelta
 import pandas as pd
 import sqlite3
 import json
-from music_rec import prep_dfs, remove_duplicates, recommend_songs
+from music_rec import prep_dfs, remove_duplicates, recommend_songs, get_user_df, get_spotify_df
 from eda import two_var_plot, genre_hist
 import plotly.express as px
 from plotly import utils
@@ -127,8 +127,8 @@ def get_playlists():
     username = user_info['display_name']
     tracks_df['username'] = username
     playlists_df['username'] = username
-    print(tracks_df.info())
-    print(playlists_df.info())
+    # print(tracks_df.info())
+    # print(playlists_df.info())
     
     with sqlite3.connect('spotify_dataset.db') as conn:
         playlists_df.to_sql("user_playlists", conn, if_exists = "append", index = False) # one table for playlists and one for tracks
@@ -137,7 +137,7 @@ def get_playlists():
         SELECT user_tracks.track_name, user_tracks.track_artists 
         FROM user_tracks INNER JOIN spotify_tracks 
         ON user_tracks.track_id = spotify_tracks.track_id;''', conn)
-    
+        
     #extract artist names for display table
     display['track_artists'] = (display['track_artists'].str.findall(r'\bname": "([^"]*)')).apply(lambda x: str(x))
     display.drop_duplicates(inplace=True)
@@ -174,12 +174,13 @@ def refresh_token():
 @app.route('/display-recommended', methods=['GET', 'POST'])
 
 def display_recommended():
-    with sqlite3.connect("spotify_dataset.db") as conn:
-        df_spotify_tracks = pd.read_sql_query("SELECT * FROM spotify_tracks;", conn)
-        df_user_playlists = pd.read_sql_query("SELECT * FROM user_playlists;", conn)
-        df_user_tracks = pd.read_sql_query("SELECT * FROM user_tracks;", conn)
+    # with sqlite3.connect("spotify_dataset.db") as conn:
+    #     df_spotify_tracks = pd.read_sql_query("SELECT * FROM spotify_tracks;", conn)
+    #     df_user_playlists = pd.read_sql_query("SELECT * FROM user_playlists;", conn)
+    #     df_user_tracks = pd.read_sql_query("SELECT * FROM user_tracks;", conn)
 
-    user_df, df_spotify_tracks = prep_dfs()
+    user_df = get_user_df()
+    df_spotify_tracks = get_spotify_df()
 
     features = ['danceability', 'energy', 'tempo', 'speechiness', 'acousticness', 'instrumentalness', 'valence', 'loudness']
     df_users_filtered = user_df[features]
@@ -233,40 +234,24 @@ def display_data():
 @app.route('/display-data/two-var-plot', methods=['GET', 'POST'])
 def display_two_var():
     
-    # Get the data into dataframes
-    with sqlite3.connect("spotify_dataset.db") as conn:
-        df_spotify_tracks = pd.read_sql_query("SELECT * FROM spotify_tracks;", conn)
-        df_user_playlists = pd.read_sql_query("SELECT * FROM user_playlists;", conn)
-        df_user_tracks = pd.read_sql_query("SELECT * FROM user_tracks;", conn)
+    user_df = get_user_df()
 
-    user_df, df_spotify_tracks = prep_dfs()
-    print(user_df.info())
-    
-    if request.method=='POST':
+    if request.method == 'POST':
         features = [request.form.get('feature0', 'loudness'), request.form.get('feature1', 'energy')]
-
-    else:
-        features = ['loudness', 'energy']
-    # Create the Plotly figures
-    fig = two_var_plot(user_df, features)
+        session['features'] = features  # Store in session
+        return redirect(url_for('display_two_var'))  # Redirect after POST
     
-    # Convert the Plotly figure to JSON
+    features = session.get('features', ['loudness', 'energy'])  # Load stored features
+    fig = two_var_plot(user_df, features)
     graph_json = json.dumps(fig, cls=utils.PlotlyJSONEncoder)
     
-    # Render the template with the graph JSON
     return render_template('two_var_plot.html', graph_json=graph_json)
 
 
 @app.route('/display-data/genre-hist', methods=['GET', 'POST'])
 def display_genre_hist():
     
-    # Get the data into dataframes
-    with sqlite3.connect("spotify_dataset.db") as conn:
-        df_spotify_tracks = pd.read_sql_query("SELECT * FROM spotify_tracks;", conn)
-        df_user_playlists = pd.read_sql_query("SELECT * FROM user_playlists;", conn)
-        df_user_tracks = pd.read_sql_query("SELECT * FROM user_tracks;", conn)
-
-    user_df, df_spotify_tracks = prep_dfs()
+    user_df = get_user_df()
     
     genre = request.form.get('genre', 'pop')
         
@@ -275,4 +260,3 @@ def display_genre_hist():
     graph_json = json.dumps(fig, cls=util.PlotlyJSONEncoder)
     return render_template('genre_hist.html', graph_json=graph_json)
 
-#change prep_dfs back to two separate functions so that it's faster and/or change prep_dfs to use SQL query inner join instead of pd concat

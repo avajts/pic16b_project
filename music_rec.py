@@ -101,12 +101,13 @@ def tune_knn(X_train, X_test, k_values=range(1, 101)):
 def recommend_songs(user_songs, spotify_tracks, genre=None, n=30):
     """ Function to recommend songs based on playlist
     Args: 
-        user_songs: db full of playlists (rows must be >= n)
+        user_songs: df full of playlists (rows must be >= n)
+        spotify_tracks: df of all kaggle data
         genre: string, optional, genre provided by user to group tracks
         n: number of songs being recommended
 
     Returns:
-        recommended_tracks: db which contains the n many recommended songs
+        recommended_tracks: df which contains the n many recommended songs
     """
     features = ['danceability', 'energy', 'tempo', 'speechiness', 'acousticness', 'instrumentalness', 'valence', 'loudness']
     
@@ -145,4 +146,35 @@ def recommend_songs(user_songs, spotify_tracks, genre=None, n=30):
     return recommended_tracks[['track_name', 'artists', 'track_genre', 'loudness', 'danceability', 'energy', 'tempo', 'speechiness', 'acousticness', 'instrumentalness', 'valence']]
 
 
+def get_user_df():
+    """
+    no args
+    returns df with user songs that are also in kaggle dataset
+    """
+    with sqlite3.connect("spotify_dataset.db") as conn:
+        user_df = pd.read_sql_query('''
+            SELECT * 
+            FROM user_tracks INNER JOIN spotify_tracks 
+            ON user_tracks.track_id = spotify_tracks.track_id;''', conn)
+    
+    #remove duplicates
+    user_df.drop_duplicates(subset='track_name', ignore_index=True, inplace=True)
+    user_df['track_genre_encoded'] = le.fit_transform(user_df['track_genre'])
 
+    #remove duplicate columns
+    user_df = user_df.loc[:,~user_df.columns.duplicated()].copy()
+    
+    #extract artist names
+    user_df['track_artists'] = (user_df['track_artists'].str.findall(r'\bname": "([^"]*)')).apply(lambda x: str(x))
+
+    return user_df
+
+def get_spotify_df():
+    """
+    no args
+    returns df of kaggle dataset
+    """
+    with sqlite3.connect("spotify_dataset.db") as conn:
+        spotify_df = pd.read_sql_query('SELECT * FROM spotify_tracks', conn)
+    
+    return spotify_df.drop_duplicates(subset='track_id', ignore_index=True)

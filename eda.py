@@ -20,7 +20,7 @@ def genre_plot(db, genres, col):
 def two_var_plot(df, features):
     x = features[0]
     y = features[1]
-    fig = px.scatter(df, x, y, title=f'{x} vs. {y}', color='username')
+    fig = px.scatter(df, x, y, title=f'{x} vs. {y}', color='username', hover_data=['track_name', 'track_artists'])
     return fig
 
 def genre_hist(df):
