@@ -6,37 +6,39 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 
+from sklearn.preprocessing import LabelEncoder
+le = LabelEncoder()
 
-def prep_dfs():
+
+def prep_dfs(spotify, tracks):
     '''
-    Removes duplicates in sql tables spotify_tracks,
-    user_playlists, and user_tracks by calling remove_duplicates
-    function.
+    Returns df of users songs that can also be found in Spotify df.
+    Args:
+        spotify: df of all Spotify songs from Kaggle dataset
+        tracks: df of all users songs that may not be in Kaggle dataset
     Returns:
-    df_all_tracks: df of user songs that are also in Kaggle dataset
-    df_spotify_tracks: df of Kaggle Spotify songs
+        df_all_tracks: df of user songs that are also in Kaggle dataset
     '''
-    with sqlite3.connect("spotify_dataset.db") as conn:
-        df_spotify_tracks = pd.read_sql_query("SELECT * FROM spotify_tracks;", conn)
-        df_user_playlists = pd.read_sql_query("SELECT * FROM user_playlists;", conn)
-        df_user_tracks = pd.read_sql_query("SELECT * FROM user_tracks;", conn)
-
     #Remove duplicates
-    remove_duplicates(df_spotify_tracks, ['track_name', 'artists'])
-    remove_duplicates(df_user_playlists, ['name', 'description'])
-    remove_duplicates(df_user_tracks, ['track_name', 'track_popularity'])
+    """ Not necessary since we do this in ipynb file, use params"""
+    # df_spotify_tracks = remove_duplicates(df_spotify_tracks, ['track_name', 'artists'])
+    # df_user_playlist = remove_duplicates(df_user_playlists, ['name', 'description'])
+    # df_user_tracks = remove_duplicates(df_user_tracks, ['track_name', 'track_popularity'])
 
     #Create df that has user songs that are also in Kaggle dataset
     df_all_tracks = pd.DataFrame()
     print(f'length of user_df: {len(df_all_tracks)}')
 
-    for i in range(len(df_user_tracks)):
-        value = df_user_tracks.loc[i, 'track_id']
-        if value in df_spotify_tracks['track_id'].values:
-            result = df_spotify_tracks.loc[df_spotify_tracks['track_id'] == value]
+    for i in range(len(tracks)):
+        value = tracks.loc[i, 'track_id']
+        if value in tracks['track_id'].values:
+            result = spotify.loc[spotify['track_id'] == value]
             df_all_tracks = pd.concat([df_all_tracks, result], ignore_index=True)
+
+    # Encode the 'track_genre' category to get numerical values
+    df_all_tracks['track_genre_encoded'] = le.fit_transform(df_all_tracks['track_genre'])
         
-    return df_all_tracks, df_spotify_tracks
+    return df_all_tracks
 
 
 def remove_duplicates(df, subset):
@@ -62,6 +64,8 @@ def remove_duplicates(df, subset):
         rows_left = df.shape[0]
         
         print(f'After dropping duplicates, there are {rows_left} rows left.')
+
+    return df
 
 
 
