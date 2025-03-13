@@ -12,6 +12,19 @@ from plotly import utils
 import re
 
 
+def clear_database():
+    """Clears the database tables before the app starts."""
+    with sqlite3.connect('spotify_dataset.db') as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM user_playlists;")
+        cursor.execute("DELETE FROM user_tracks;")
+        conn.commit()
+    print("Database cleared.")
+
+# Clear the database before the app starts
+clear_database()
+
+
 app = Flask(__name__)
 app.secret_key = 'li23j4-23423h-45896jgahnv'
 
