@@ -22,8 +22,8 @@
             width: 80%;
             max-width: 500px;
         }
-	.submit-btn {
-            background-color: #1DB954;  
+        .scatter-btn {
+            background-color: #52BE80;  
             color: white;               
             padding: 10px 20px;         
             border: none;              
@@ -31,22 +31,37 @@
             font-size: 16px;     
 	    width: 70%      
         }
+        .hist-btn {
+            background-color: #45b39d;  
+            color: white;               
+            padding: 10px 20px;         
+            border: none;              
+            border-radius: 5px;              
+            font-size: 16px;     
+	    width: 70%      
+        }    
+        .back-btn {
+            background-color: #73c6b6;
+            border: none;
+            font-size: 18px;
+            padding: 12px;
+            width: 30%;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h2 class="text-center">Enter Plot Type</h2>
-        <form action="/display-data" method="POST">
-            
-            <select>
-                <label for="plot" class="form-label">Plot Type</label>
-                <option value="two_var_plot">Two Variable Scatter Plot</option>
-                <option value="genre_hist">Genre Histogram</option>
-            </select>
-
-            <button type="submit" class="btn submit-btn w-100">Submit</button>
-        </form>
+        <h2 class="text-center">Select Plot Type</h2>
+        <div class="text-center">
+            <a href="/display-data/two-var-plot" class="btn scatter-btn">Two-Variable Scatterplot</a>
+		<br> <br>
+        	<p>OR</p>
+            <a href="/display-data/genre-hist" class="btn hist-btn">Genre Histogram</a>
+		<br> <br>
+        	<p>OR</p>
+            <a href="/playlists" class="btn back-btn">Go back</a>
+        </div>
     </div>
 
 </body>

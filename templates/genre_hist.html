@@ -29,14 +29,6 @@
 
     <div class="container">
         <h2 class="text-center">Genre Histogram</h2>
-        <form action="/display-data/genre-hist" method="POST">
-            
-            <div class="mb-3">
-                <label for="genre" class="form-label">Genre</label>
-                <input type="text" class="form-control" id="genre" name="genre" required>
-            </div>
-            <button type="submit" class="btn submit-btn w-100">Submit</button>
-        </form>
         <div id="genre-hist"></div>
         <script>
             var graph_data = {{ graph_json | safe }};

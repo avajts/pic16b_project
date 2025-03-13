@@ -24,5 +24,5 @@ def two_var_plot(df, features):
     return fig
 
 def genre_hist(df):
-    fig = px.histogram(df, 'genre', facet_col='username')
+    fig = px.histogram(df, 'track_genre', facet_col='username', color='track_genre')
     return fig

@@ -248,15 +248,19 @@ def display_two_var():
     return render_template('two_var_plot.html', graph_json=graph_json)
 
 
-@app.route('/display-data/genre-hist', methods=['GET', 'POST'])
+@app.route('/display-data/genre-hist', methods=['GET'])
 def display_genre_hist():
     
     user_df = get_user_df()
+
+#     if request.method == 'POST':
+#         genre = request.form.get('genre', 'pop')
+#         session['genre'] = genre  # Store in session
+#         return redirect(url_for('display_genre_hist'))  # Redirect after POST
     
-    genre = request.form.get('genre', 'pop')
-        
-        
+#     features = session.get('genre', 'pop')  # Load stored features
     fig = genre_hist(user_df)
-    graph_json = json.dumps(fig, cls=util.PlotlyJSONEncoder)
+    graph_json = json.dumps(fig, cls=utils.PlotlyJSONEncoder)
+    
     return render_template('genre_hist.html', graph_json=graph_json)
 
