@@ -45,8 +45,10 @@ def remove_duplicates(df, subset):
     '''
     Removes duplicate rows from dataframes and resets the index.
     Args:
-    df: the dataframe you want to remove duplicates from
-    subset: which columns you want to find duplicates based on
+        df: the dataframe you want to remove duplicates from
+        subset: which columns you want to find duplicates based on
+    Returns:
+        df: The dataframe with no duplicate songs/rows
     '''
     # Count duplicated rows based on track_name and artists
     duplicated_rows = df.duplicated(subset=subset).sum()
@@ -98,52 +100,69 @@ def tune_knn(X_train, X_test, k_values=range(1, 101)):
 
 
 
-def recommend_songs(user_songs, spotify_tracks, genre=None, n=30):
-    """ Function to recommend songs based on playlist
-    Args: 
-        user_songs: df full of playlists (rows must be >= n)
-        spotify_tracks: df of all kaggle data
-        genre: string, optional, genre provided by user to group tracks
-        n: number of songs being recommended
+def recommend_songs(user_songs, spotify_tracks, genre=None, n=30, random_state=42):
+    """
+    Generate a personalized playlist of `n` songs from a specific genre based on the user's preferences.
+
+    Args:
+        df: The user's listening history with audio features.
+        genre: The genre of songs to recommend.
+        n: The number of songs to recommend (default is 5).
+        random_state: Seed for reproducibility (default is 42).
 
     Returns:
-        recommended_tracks: df which contains the n many recommended songs
+        random_recommendations: A DataFrame containing the recommended songs.
     """
-    features = ['danceability', 'energy', 'tempo', 'speechiness', 'acousticness', 'instrumentalness', 'valence', 'loudness']
-    
-    # Filter dataset by genre if specified
-    if genre:
-        df_spot_filtered = spotify_tracks[spotify_tracks['track_genre'].str.lower() == genre.lower()]
-        if df_spot_filtered.empty:
-            print(f"Warning: No songs found for genre '{genre}'. Using all genres instead.")
-            df_spot_filtered = spotify_tracks  # Fall back to all songs
-    else:
-        df_spot_filtered = spotify_tracks  # Use all genres if none specified
+    # Filter the Spotify dataset to include only songs from the specified genre
+    genre_tracks = spotify_tracks[spotify_tracks['track_genre'].str.lower() == genre.lower()]
+
+    # Check if there are enough songs in the specified genre
+    if len(genre_tracks) < n:
+        raise ValueError(f"Not enough songs in the '{genre}' genre. Only {len(genre_tracks)} songs available.")
+
+    # Select relevant features for the KNN model
+    features = ['danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness',
+                'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo']
+
+    # Prepare the feature matrix for the user's listening history
+    X_user = user_songs[features]
+
+    # Train the KNN model on the user's data
+    # Standardize the features
+    scaler = StandardScaler()
+    X_user_scaled = scaler.fit_transform(X_user)
 
     # Ensure `n` does not exceed the number of available songs in the dataset
-    max_neighbors = min(n, len(df_spot_filtered))  
+    max_neighbors = min(n, len(X_user_scaled))
 
-    # Ensure `user_songs` has enough entries
-    num_user_songs = len(user_songs)
-    if num_user_songs < max_neighbors:
-        print(f"Warning: User provided only {num_user_songs} songs. Adjusting neighbors to {num_user_songs}.")
-        max_neighbors = num_user_songs
+    # Train the KNN model on the user's features
+    knn = NearestNeighbors(n_neighbors=max_neighbors, metric='euclidean')  # Use Euclidean distance
+    knn.fit(X_user_scaled)
 
-    # Create and scale the users songs with the given features
-    scaler = StandardScaler()
-    user_songs_scaled = scaler.fit_transform(user_songs[features])
+    # Prepare the feature matrix for the genre-specific songs
+    X_genre = genre_tracks[features]
+    X_genre_scaled = scaler.transform(X_genre)
 
-     # Fit a k-NN model specifically for the filtered dataset
-    knn_filtered = NearestNeighbors(n_neighbors=max_neighbors, metric='euclidean')
-    knn_filtered.fit(df_spot_filtered[features])
+    # Find the nearest neighbors (most similar songs) in the genre-specific dataset
+    distances, indices = knn.kneighbors(X_genre_scaled)
 
-    # Find nearest neighbors
-    distances, indices = knn_filtered.kneighbors(user_songs_scaled, n_neighbors=max_neighbors)
+    # Flatten the indices array to get a list of all recommended song indices
+    recommended_song_indices = indices.flatten()
 
-    # Get recommended tracks from the filtered dataset
-    recommended_tracks = df_spot_filtered.iloc[indices[0]]
+    # Ensure indices are within the valid range of the genre_tracks DataFrame
+    valid_indices = [idx for idx in recommended_song_indices if idx < len(genre_tracks)]
 
-    return recommended_tracks[['track_name', 'artists', 'track_genre', 'loudness', 'danceability', 'energy', 'tempo', 'speechiness', 'acousticness', 'instrumentalness', 'valence']]
+    if not valid_indices:
+        raise ValueError("No valid recommendations found. Please check the input data.")
+
+    # Get the recommended songs
+    recommended_songs = genre_tracks.iloc[valid_indices].drop_duplicates(subset=['track_id']).head(n)
+
+    # Randomly select `n` songs from the recommendations
+    random_recommendations = recommended_songs.sample(n=n, random_state=random_state)
+
+    # Display the recommended songs
+    return random_recommendations
 
 
 def get_user_df():
@@ -178,3 +197,95 @@ def get_spotify_df():
         spotify_df = pd.read_sql_query('SELECT * FROM spotify_tracks', conn)
     
     return spotify_df.drop_duplicates(subset='track_id', ignore_index=True)
+
+def playlist_song_recs(users_playlists, spotify_tracks, playlist, n=5):
+    """
+    Function to test reccomendation system by inputing user playlist, and recommending 5 songs.
+    Args:
+        users_playlists: Df that contains the users tracks and their associated playlists (no song metrics)
+        spotify tracks: Df that contains all songs in Kaggle dataset wth song metrics
+        playlist: User's selected playlist to get recommended songs for
+        n: Number of songs to get recommended
+    Returns:
+        random_recommendations: Df that contains 5 randomly selected songs from list of song recommendations
+    """
+    # Identify the requested playlist
+    # requested_playlist_name = "Clairo Baby" 
+    requested_playlist_tracks = users_playlists[users_playlists['name'].str.lower() == playlist.lower()]['track_id'].tolist()
+
+    # Extract features for the requested playlist
+    requested_playlist_features = spotify_tracks[spotify_tracks['track_id'].isin(requested_playlist_tracks)]
+
+    # Encode track_genre as a numerical feature in both DataFrames
+    label_encoder = LabelEncoder()
+    spotify_tracks['track_genre_encoded'] = label_encoder.fit_transform(spotify_tracks['track_genre'])
+    requested_playlist_features['track_genre_encoded'] = label_encoder.transform(requested_playlist_features['track_genre'])
+
+    # Print the top genres in the requested playlist
+    print("Top genres in the requested playlist:")
+    print(requested_playlist_features['track_genre'].value_counts())
+
+    # Filter the Spotify dataset to include only songs from the top genres
+    main_genres = requested_playlist_features['track_genre'].value_counts().index[:2]  # Top 2 genres
+    filtered_spotify_tracks = spotify_tracks[spotify_tracks['track_genre'].isin(main_genres)]
+
+    # Select relevant features for the KNN model
+    features = ['danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness',
+                'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo']
+
+    # Prepare the feature matrix for the requested playlist
+    X_requested = requested_playlist_features[features]
+
+    # Train separate KNN models for each genre
+    recommended_songs_by_genre = []
+
+    for genre in main_genres:
+        # Filter the requested playlist features for the current genre
+        genre_features = requested_playlist_features[requested_playlist_features['track_genre'].str.lower() == genre.lower()]
+        
+        # Prepare the feature matrix for the current genre
+        X_genre = genre_features[features]
+        
+        # Standardize the features
+        scaler = StandardScaler()
+        X_genre_scaled = scaler.fit_transform(X_genre)
+
+        # Ensure `n` does not exceed the number of available songs in the dataset
+        max_neighbors = min(5, len(X_genre_scaled))  
+        
+        # Train the KNN model for the current genre
+        knn = NearestNeighbors(n_neighbors=max_neighbors, metric='euclidean')  # Use Euclidean distance
+        knn.fit(X_genre_scaled)
+        
+        # Filter the Spotify dataset for the current genre
+        genre_spotify_tracks = filtered_spotify_tracks[filtered_spotify_tracks['track_genre'].str.lower() == genre.lower()]
+        
+        # Prepare the feature matrix for the filtered Spotify dataset
+        X_spotify_genre = genre_spotify_tracks[features]
+        X_spotify_genre_scaled = scaler.transform(X_spotify_genre)
+        
+        # Find the nearest neighbors (most similar songs) in the filtered Spotify dataset
+        distances, indices = knn.kneighbors(X_spotify_genre_scaled)
+        
+        # Flatten the indices array to get a list of all recommended song indices
+        recommended_song_indices = indices.flatten()
+        
+        # Filter out tracks already in the requested playlist
+        recommended_song_indices = [idx for idx in recommended_song_indices if genre_spotify_tracks.iloc[idx]['track_id'] not in requested_playlist_tracks]
+        
+        # Get the recommended songs for the current genre
+        genre_recommendations = genre_spotify_tracks.iloc[recommended_song_indices].drop_duplicates(subset=['track_id']).head(5)
+        
+        # Add the recommendations to the list
+        recommended_songs_by_genre.append(genre_recommendations)
+
+    # Combine the recommendations
+    balanced_recommendations = pd.concat(recommended_songs_by_genre)  # Ensure we have 5 songs in total
+
+    # Ensure `n` does not exceed the number of available songs in the dataset
+    max_neighbors = min(5, len(balanced_recommendations))  
+
+    # Randomly select 5 songs from the combined recommendations
+    random_recommendations = balanced_recommendations.sample(n=max_neighbors, random_state=42)  # Use random_state for reproducibility
+
+    return random_recommendations
