@@ -28,7 +28,7 @@ def prep_dfs():
 
     #Create df that has user songs that are also in Kaggle dataset
     df_all_tracks = pd.DataFrame()
-    print(len(df_all_tracks))
+    print(f'length of user_df: {len(df_all_tracks)}')
 
     for i in range(len(df_user_tracks)):
         value = df_user_tracks.loc[i, 'track_id']

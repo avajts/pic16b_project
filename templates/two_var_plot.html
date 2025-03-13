@@ -29,6 +29,33 @@
 
     <div class="container">
         <h2 class="text-center">Loudness vs. Energy Scatterplot</h2>
+            <form action="/display-data/two-var-plot" method="POST">
+
+                <select>
+                    <label for="feature0" class="form-label">Feature 1</label>
+                    <option value="danceability">Danceability</option>
+                    <option value="loudness">Loudness</option>
+                    <option value="energy">Energy</option>
+                    <option value="acousticness">Acousticness</option>
+                    <option value="instrumentalness">Instrumentalness</option>
+                    <option value="speechiness">Speechiness</option>
+                    <option value="valence">Valence</option>
+                    <option value="tempo">Tempo</option>
+                </select>
+            
+                <select>
+                    <label for="feature1" class="form-label">Feature 1</label>
+                    <option value="danceability">Danceability</option>
+                    <option value="loudness">Loudness</option>
+                    <option value="energy">Energy</option>
+                    <option value="acousticness">Acousticness</option>
+                    <option value="instrumentalness">Instrumentalness</option>
+                    <option value="speechiness">Speechiness</option>
+                    <option value="valence">Valence</option>
+                    <option value="tempo">Tempo</option>
+                </select>
+            <button type="submit" class="btn submit-btn w-100">Submit</button>
+        </form>
         
         <div id="2-var-plot"></div>
         <script>
@@ -37,7 +64,7 @@
         </script>
         
         <div class="text-center">
-            <a href="/playlists" class="btn btn-one">Back</a>
+            <a href="/display-data" class="btn btn-one">Back</a>
         </div>
         
     </div>

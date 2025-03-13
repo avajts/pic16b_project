@@ -115,7 +115,6 @@ def get_playlists():
     for col in tracks_df.columns:
         tracks_df[col] = tracks_df[col].apply(lambda x: json.dumps(x) if isinstance(x, list) else x) #convert list-like data  types for sql
 
-    # print(tracks_df.info())
     
     
     #get user's username so they can have their own table in the database
@@ -128,6 +127,8 @@ def get_playlists():
     username = user_info['display_name']
     tracks_df['username'] = username
     playlists_df['username'] = username
+    print(tracks_df.info())
+    print(playlists_df.info())
     
     with sqlite3.connect('spotify_dataset.db') as conn:
         playlists_df.to_sql("user_playlists", conn, if_exists = "append", index = False) # one table for playlists and one for tracks
@@ -214,6 +215,51 @@ def display_data():
     if user clicks on button to prompt this, it will display some visualizations about the users' music
     visualizations can be customized
     """
+    
+    if request.method == 'POST':
+        plot = request.form.get('plot', 'two_var_plot')
+        if plot == 'two_var_plot':
+            return redirect('/display-data/two-var-plot')
+        elif plot== 'genre_hist':
+            return redirect('/display-data/genre-hist')
+        elif request.form.get('plot')==None:
+            print("Error: No plot returned")
+            return redirect('/playlists')
+    
+    else: return render_template('data_input.html')
+    
+    
+
+@app.route('/display-data/two-var-plot', methods=['GET', 'POST'])
+def display_two_var():
+    
+    # Get the data into dataframes
+    with sqlite3.connect("spotify_dataset.db") as conn:
+        df_spotify_tracks = pd.read_sql_query("SELECT * FROM spotify_tracks;", conn)
+        df_user_playlists = pd.read_sql_query("SELECT * FROM user_playlists;", conn)
+        df_user_tracks = pd.read_sql_query("SELECT * FROM user_tracks;", conn)
+
+    user_df, df_spotify_tracks = prep_dfs()
+    print(user_df.info())
+    
+    if request.method=='POST':
+        features = [request.form.get('feature0', 'loudness'), request.form.get('feature1', 'energy')]
+
+    else:
+        features = ['loudness', 'energy']
+    # Create the Plotly figures
+    fig = two_var_plot(user_df, features)
+    
+    # Convert the Plotly figure to JSON
+    graph_json = json.dumps(fig, cls=utils.PlotlyJSONEncoder)
+    
+    # Render the template with the graph JSON
+    return render_template('two_var_plot.html', graph_json=graph_json)
+
+
+@app.route('/display-data/genre-hist', methods=['GET', 'POST'])
+def display_genre_hist():
+    
     # Get the data into dataframes
     with sqlite3.connect("spotify_dataset.db") as conn:
         df_spotify_tracks = pd.read_sql_query("SELECT * FROM spotify_tracks;", conn)
@@ -222,25 +268,11 @@ def display_data():
 
     user_df, df_spotify_tracks = prep_dfs()
     
-    if request.method == 'POST':
-        plot = request.form.get('plot', None)
-        features = [request.form.get('feature0', 'loudness'), request.form.get('feature1', 'energy')]
-        genre = request.form.get('genre', 'pop')
+    genre = request.form.get('genre', 'pop')
         
-        if plot == 'two_var_plot':
-            # Create the Plotly figures
-            fig = two_var_plot(user_df, features)
-    
-            # Convert the Plotly figure to JSON
-            graph_json = json.dumps(fig, cls=utils.PlotlyJSONEncoder)
-    
-            # Render the template with the graph JSON
-            return render_template('two_var_plot.html', graph_json=graph_json)
         
-        elif plot == 'genre_hist':
-            fig = genre_hist(user_df)
-            graph_json = json.dumps(fig, cls=util.PlotlyJSONEncoder)
-            return render_template('genre_hist.html', graph_json=graph_json)
-    
-    else: return render_template('data_input.html')
-    
+    fig = genre_hist(user_df)
+    graph_json = json.dumps(fig, cls=util.PlotlyJSONEncoder)
+    return render_template('genre_hist.html', graph_json=graph_json)
+
+#change prep_dfs back to two separate functions so that it's faster and/or change prep_dfs to use SQL query inner join instead of pd concat
