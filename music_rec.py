@@ -186,8 +186,7 @@ def get_user_df():
     user_df = user_df.loc[:,~user_df.columns.duplicated()].copy()
     
     #extract artist names
-    user_df['track_artists'] = (user_df['track_artists'].str.findall(r'\bname": "([^"]*)')
-                                ).apply(lambda x: str(x))
+    user_df['track_artists'] = (user_df['track_artists'].str.findall(r'\bname": "([^"]*)')).apply(lambda x: str(x))
 
     return user_df
 
