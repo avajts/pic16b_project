@@ -16,8 +16,14 @@ def clear_database():
     """Clears the database tables before the app starts."""
     with sqlite3.connect('spotify_dataset.db') as conn:
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM user_playlists;")
-        cursor.execute("DELETE FROM user_tracks;")
+         # Check if the table exists before deleting
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user_playlists';")
+        if cursor.fetchone():  # Table exists
+            cursor.execute("DELETE FROM user_playlists;")
+
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user_tracks';")
+        if cursor.fetchone():  # Table exists
+            cursor.execute("DELETE FROM user_tracks;")
         conn.commit()
     print("Database cleared.")
 
@@ -194,7 +200,7 @@ def display_recommended():
 
     if request.method == 'POST':
         genre = request.form.get('genre', None)
-        n = request.form.get('n', '30')
+        n = request.form.get('n', '5')
 
         try:
             n = int(n)  # Convert to integer

@@ -100,7 +100,7 @@ def tune_knn(X_train, X_test, k_values=range(1, 101)):
 
 
 
-def recommend_songs(user_songs, spotify_tracks, genre=None, n=30, random_state=42):
+def recommend_songs(user_songs, spotify_tracks, genre=None, n=5, random_state=42):
     """
     Generate a personalized playlist of `n` songs from a specific genre based on the user's preferences.
 
@@ -133,10 +133,10 @@ def recommend_songs(user_songs, spotify_tracks, genre=None, n=30, random_state=4
     X_user_scaled = scaler.fit_transform(X_user)
 
     # Ensure `n` does not exceed the number of available songs in the dataset
-    max_neighbors = min(n, len(X_user_scaled))
+    n = min(n, len(X_user_scaled))
 
     # Train the KNN model on the user's features
-    knn = NearestNeighbors(n_neighbors=max_neighbors, metric='euclidean')  # Use Euclidean distance
+    knn = NearestNeighbors(n_neighbors=n, metric='euclidean')  # Use Euclidean distance
     knn.fit(X_user_scaled)
 
     # Prepare the feature matrix for the genre-specific songs
