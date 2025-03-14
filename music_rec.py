@@ -12,6 +12,7 @@ le = LabelEncoder()
 
 def prep_dfs(spotify, tracks):
     '''
+    NOT RELEVANT TO APP
     Returns df of users songs that can also be found in Spotify df.
     Args:
         spotify: df of all Spotify songs from Kaggle dataset
@@ -20,9 +21,7 @@ def prep_dfs(spotify, tracks):
         df_all_tracks: df of user songs that are also in Kaggle dataset
     '''
     #Remove duplicates
-    """ Not necessary since we do this in ipynb file, use params"""
     spotify = remove_duplicates(spotify, ['track_name', 'artists'])
-    #playlist = remove_duplicates(playlist, ['name', 'description'])
     tracks = remove_duplicates(tracks, ['track_name', 'track_popularity'])
 
     #Create df that has user songs that are also in Kaggle dataset
@@ -43,6 +42,7 @@ def prep_dfs(spotify, tracks):
 
 def remove_duplicates(df, subset):
     '''
+    NOT RELEVANT TO APP
     Removes duplicate rows from dataframes and resets the index.
     Args:
         df: the dataframe you want to remove duplicates from
@@ -179,14 +179,15 @@ def get_user_df():
             ON user_tracks.track_id = spotify_tracks.track_id;''', conn)
     
     #remove duplicates
-    user_df.drop_duplicates(subset='track_name', ignore_index=True, inplace=True)
+    user_df.drop_duplicates(subset=['track_name', 'artists'], ignore_index=True, inplace=True)
     user_df['track_genre_encoded'] = le.fit_transform(user_df['track_genre'])
 
     #remove duplicate columns
     user_df = user_df.loc[:,~user_df.columns.duplicated()].copy()
     
     #extract artist names
-    user_df['track_artists'] = (user_df['track_artists'].str.findall(r'\bname": "([^"]*)')).apply(lambda x: str(x))
+    user_df['track_artists'] = (user_df['track_artists'].str.findall(r'\bname": "([^"]*)')
+                                ).apply(lambda x: str(x))
 
     return user_df
 
@@ -198,7 +199,7 @@ def get_spotify_df():
     with sqlite3.connect("spotify_dataset.db") as conn:
         spotify_df = pd.read_sql_query('SELECT * FROM spotify_tracks', conn)
     
-    return spotify_df.drop_duplicates(subset='track_id', ignore_index=True)
+    return spotify_df.drop_duplicates(subset=['track_name', 'artists'], ignore_index=True)
 
 def playlist_song_recs(users_playlists, spotify_tracks, playlist, n=5):
     """
@@ -212,7 +213,6 @@ def playlist_song_recs(users_playlists, spotify_tracks, playlist, n=5):
         random_recommendations: Df that contains 5 randomly selected songs from list of song recommendations
     """
     # Identify the requested playlist
-    # requested_playlist_name = "Clairo Baby" 
     requested_playlist_tracks = users_playlists[users_playlists['name'].str.lower() == playlist.lower()]['track_id'].tolist()
 
     # Extract features for the requested playlist
@@ -228,7 +228,7 @@ def playlist_song_recs(users_playlists, spotify_tracks, playlist, n=5):
     print(requested_playlist_features['track_genre'].value_counts())
 
     # Filter the Spotify dataset to include only songs from the top genres
-    main_genres = requested_playlist_features['track_genre'].value_counts().index[:2]  # Top 2 genres
+    main_genres = requested_playlist_features['track_genre'].value_counts().index[:]  # Top 2 genres
     filtered_spotify_tracks = spotify_tracks[spotify_tracks['track_genre'].isin(main_genres)]
 
     # Select relevant features for the KNN model
