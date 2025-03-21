@@ -60,3 +60,9 @@ def plot_correlation_heatmap(df):
 
     # Show the heatmap
     fig.show()
+
+
+def plot_genre_count(df):
+    fig = px.histogram(df, 'track_genre', color='track_genre')
+    fig.show()
+
