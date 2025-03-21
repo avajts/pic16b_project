@@ -19,7 +19,7 @@ git clone https://github.com/avajts/pic16b_project.git
 cd pic16b_project
 ```
 
-Step 2: Install Flask
+### Step 2: Install Flask
 
 ```
 pip install Flask
