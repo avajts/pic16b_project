@@ -26,3 +26,43 @@ def two_var_plot(df, features):
 def genre_hist(df):
     fig = px.histogram(df, 'track_genre', facet_col='username', color='track_genre')
     return fig
+
+def plot_correlation_heatmap(df):
+    """
+    Generates and displays a correlation heatmap for numerical track features in the given Spotify dataset.
+    
+    Parameters:
+        df (pd.DataFrame): The Spotify dataset containing track features.
+    
+    Returns:
+        None
+    """
+    # Extract numerical columns
+    numerical_cols = df.select_dtypes(include=['number']).columns.tolist()
+    num_df = df[numerical_cols]
+    
+    # Compute correlation matrix
+    corr_matrix = num_df.corr()
+    
+    # Create heatmap using Plotly
+    fig = px.imshow(corr_matrix,
+                    x=corr_matrix.columns,
+                    y=corr_matrix.index,
+                    title="Correlation Matrix Heatmap")
+
+    # Adjust layout
+    fig.update_layout(
+        xaxis_title="",
+        yaxis_title="",
+        width=800,
+        height=800
+    )
+
+    # Show the heatmap
+    fig.show()
+
+
+def plot_genre_count(df):
+    fig = px.histogram(df, 'track_genre', color='track_genre')
+    fig.show()
+
